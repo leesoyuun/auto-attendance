@@ -53,8 +53,6 @@ export interface WeekOutcome {
   /** 크루 전체에 그 주 일정이 있었는지 */
   hadEvents: boolean;
   attended: number;
-  /** 참여 중 후기를 낸 것이 하나라도 있는지 */
-  reviewed: boolean;
   noShows: number;
   excusedNoShows: number;
   warned: boolean;
@@ -215,8 +213,7 @@ export function sumByMonth(lines: PointLine[]): Record<IsoMonth, number> {
 /**
  * 주별 요건을 훑어 경고와 연속 불참을 판정합니다.
  *
- * 주간 요건: 그 주에 참여가 1회 이상 있고, 그중 후기를 낸 것이 있어야 합니다
- * ("주 1회 + 참여 후기까지 필수").
+ * 주간 요건: 그 주에 참여가 1회 이상 있어야 합니다.
  */
 function evaluateWeeks(
   member: Member,
@@ -233,19 +230,17 @@ function evaluateWeeks(
     const attended = rows.filter((r) => r.state === "참여");
     const noShows = rows.filter((r) => r.state === "노쇼");
     const excusedNoShows = noShows.filter((r) => r.excused);
-    const reviewed = attended.some((r) => r.reviewed);
 
     const base: Omit<WeekOutcome, "warned" | "skipped" | "note"> = {
       weekStart,
       hadEvents: eventWeeks.has(weekStart),
       attended: attended.length,
-      reviewed,
       noShows: noShows.length,
       excusedNoShows: excusedNoShows.length,
     };
 
     // 주가 시작되기 전에 가입한 사람만 그 주로 판정합니다. 주 중간에 가입했으면
-    // 남은 며칠로 "주 1회 + 후기"를 요구하는 셈이라 부당합니다. 퇴출로 이어지는
+    // 남은 며칠로 "주 1회 참여"를 요구하는 셈이라 부당합니다. 퇴출로 이어지는
     // 판정이므로 느슨한 쪽을 택합니다.
     if (weekStart < member.joinedOn) {
       return { ...base, warned: false, skipped: "before-join", note: "가입 전" };
@@ -255,25 +250,15 @@ function evaluateWeeks(
       return { ...base, warned: false, skipped: "no-events", note: "그 주 일정 없음" };
     }
 
-    if (attended.length > 0 && reviewed) {
-      return {
-        ...base,
-        warned: false,
-        skipped: null,
-        note: `참여 ${attended.length}회, 후기 제출`,
-      };
+    if (attended.length > 0) {
+      return { ...base, warned: false, skipped: null, note: `참여 ${attended.length}회` };
     }
 
     if (excusedNoShows.length > 0) {
       return { ...base, warned: false, skipped: null, note: "사전 고지로 면책" };
     }
 
-    const why =
-      attended.length > 0
-        ? `참여 ${attended.length}회, 후기 미제출`
-        : noShows.length > 0
-          ? `노쇼 ${noShows.length}회`
-          : "참여 없음";
+    const why = noShows.length > 0 ? `노쇼 ${noShows.length}회` : "참여 없음";
     return { ...base, warned: true, skipped: null, note: why };
   });
 }

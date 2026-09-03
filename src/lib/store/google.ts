@@ -31,7 +31,7 @@ const SHEETS = {
 
 const HEADERS = {
   members: ["회원ID", "이름", "가입일"],
-  attendance: ["회원ID", "날짜", "구분", "상태", "후기", "면책", "기록시각", "수정시각"],
+  attendance: ["회원ID", "날짜", "구분", "상태", "면책", "기록시각", "수정시각"],
   soloRuns: ["회원ID", "날짜", "시간"],
   closed: ["월"],
 } as const;
@@ -155,10 +155,9 @@ export class GoogleSheetsStore implements AttendanceStore {
       date: row[1]?.trim() ?? "",
       kind: (row[2]?.trim() === "정기" ? "정기" : "일반") as EventKind,
       state: row[3]?.trim() === "노쇼" ? "노쇼" : "참여",
-      reviewed: row[4]?.trim() === "Y",
-      excused: row[5]?.trim() === "Y",
-      recordedAt: row[6]?.trim() ?? "",
-      updatedAt: row[7]?.trim() || undefined,
+      excused: row[4]?.trim() === "Y",
+      recordedAt: row[5]?.trim() ?? "",
+      updatedAt: row[6]?.trim() || undefined,
     }));
   }
 
@@ -180,7 +179,6 @@ export class GoogleSheetsStore implements AttendanceStore {
       entries: records.map((r) => ({
         memberId: r.memberId,
         state: r.state,
-        reviewed: r.reviewed,
         excused: r.excused,
       })),
     };
@@ -205,7 +203,6 @@ export class GoogleSheetsStore implements AttendanceStore {
           date,
           kind,
           state: entry.state,
-          reviewed: entry.state === "참여" ? entry.reviewed : false,
           excused: entry.state === "노쇼" ? entry.excused : false,
           recordedAt: before?.recordedAt ?? stamp,
           updatedAt: before ? stamp : undefined,
@@ -223,7 +220,6 @@ export class GoogleSheetsStore implements AttendanceStore {
         r.date,
         r.kind,
         r.state,
-        r.state === "참여" ? (r.reviewed ? "Y" : "N") : "-",
         r.state === "노쇼" ? (r.excused ? "Y" : "N") : "-",
         r.recordedAt,
         r.updatedAt ?? "",

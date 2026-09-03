@@ -63,7 +63,7 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
         for (const entry of data.snapshot.entries) {
           next[entry.memberId] = {
             state: entry.state,
-            flag: entry.state === "참여" ? entry.reviewed : entry.excused,
+            flag: entry.excused,
           };
         }
         setMarks(next);
@@ -168,7 +168,6 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
       .map(([memberId, mark]) => ({
         memberId,
         state: mark.state,
-        reviewed: mark.state === "참여" ? mark.flag : false,
         excused: mark.state === "노쇼" ? mark.flag : false,
       }));
 
@@ -318,18 +317,18 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
               </span>
 
               <span className={styles.actions}>
-                {/* 후기·면책은 상태가 정해진 뒤에만 의미가 있어서 참여 왼쪽에 붙습니다.
+                {/* 면책은 노쇼일 때만 의미가 있어서 그때만 참여 왼쪽에 붙습니다.
                     자리를 비워두지 않고 없애는 편이 좁은 화면에서 낫습니다. */}
-                {state && (
+                {state === "노쇼" && (
                   <button
                     type="button"
                     className={`${styles.subToggle} ${mark?.flag ? styles.subToggleOn : ""}`}
                     aria-pressed={mark?.flag ?? false}
-                    aria-label={`${member.name} ${state === "참여" ? "후기 제출" : "사전 고지 면책"}`}
+                    aria-label={`${member.name} 사전 고지 면책`}
                     disabled={closed}
                     onClick={() => toggleFlag(member.id)}
                   >
-                    {state === "참여" ? "후기" : "면책"}
+                    면책
                   </button>
                 )}
                 <button

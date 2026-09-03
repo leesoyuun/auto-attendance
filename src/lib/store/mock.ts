@@ -65,7 +65,6 @@ export class MockStore implements AttendanceStore {
         date,
         kind,
         state,
-        reviewed: state === "참여" ? flag : false,
         excused: state === "노쇼" ? flag : false,
         recordedAt: stamp,
       }));
@@ -123,7 +122,6 @@ export class MockStore implements AttendanceStore {
       entries: rows.map((r) => ({
         memberId: r.memberId,
         state: r.state,
-        reviewed: r.reviewed,
         excused: r.excused,
       })),
     };
@@ -156,7 +154,6 @@ export class MockStore implements AttendanceStore {
           date,
           kind,
           state: entry.state,
-          reviewed: entry.state === "참여" ? entry.reviewed : false,
           excused: entry.state === "노쇼" ? entry.excused : false,
           // 최초 기록 시각은 유지하고 수정 시각을 따로 남깁니다.
           recordedAt: before?.recordedAt ?? stamp,

@@ -36,8 +36,6 @@ export interface AttendanceRecord {
   date: IsoDate;
   kind: EventKind;
   state: AttendanceState;
-  /** 참여일 때만 의미 있음. 주간 요건 판정에 쓰입니다. */
-  reviewed: boolean;
   /** 노쇼일 때만 의미 있음. 사전 고지로 면책되면 벌점과 경고가 면제됩니다. */
   excused: boolean;
   recordedAt: string;
@@ -55,6 +53,5 @@ export interface SoloRun {
 export interface DayEntry {
   memberId: string;
   state: AttendanceState;
-  reviewed: boolean;
   excused: boolean;
 }

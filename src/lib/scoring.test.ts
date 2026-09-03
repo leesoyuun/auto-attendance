@@ -23,14 +23,12 @@ function attend(
   memberId: string,
   date: IsoDate,
   kind: EventKind = "일반",
-  reviewed = true,
 ): AttendanceRecord {
   return {
     memberId,
     date,
     kind,
     state: "참여",
-    reviewed,
     excused: false,
     recordedAt: "2026-08-31 21:00",
   };
@@ -47,7 +45,6 @@ function noShow(
     date,
     kind,
     state: "노쇼",
-    reviewed: false,
     excused,
     recordedAt: "2026-08-31 21:00",
   };
@@ -184,15 +181,8 @@ describe("경고 판정", () => {
     expect(result.warnings.count).toBe(1);
   });
 
-  it("참여했지만 후기를 안 내면 경고를 받는다", () => {
-    const records = [attend(target.id, "2026-09-01", "일반", false)];
-    const result = evaluate(records, "2026-09-06");
-    expect(result.warnings.count).toBe(1);
-    expect(result.reasons[0]).toContain("후기 미제출");
-  });
-
-  it("참여 + 후기면 경고가 없다", () => {
-    const records = [attend(target.id, "2026-09-01", "일반", true)];
+  it("주 1회 참여하면 경고가 없다", () => {
+    const records = [attend(target.id, "2026-09-01")];
     expect(evaluate(records, "2026-09-06").warnings.count).toBe(0);
   });
 
@@ -216,7 +206,7 @@ describe("경고 판정", () => {
   });
 
   it("주 중간에 가입했으면 그 주는 판정하지 않는다", () => {
-    // 남은 며칠로 "주 1회 + 후기"를 요구하는 셈이라 부당합니다.
+    // 남은 며칠로 "주 1회 참여"를 요구하는 셈이라 부당합니다.
     const midWeek: Member = { ...target, joinedOn: "2026-09-03" };
     const records = [attend(FILLER, "2026-09-01"), attend(FILLER, "2026-09-08")];
     const result = evaluate(records, "2026-09-13", midWeek);

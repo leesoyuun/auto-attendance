@@ -16,13 +16,12 @@ function parseEntries(raw: unknown): DayEntry[] | string {
   const entries: DayEntry[] = [];
   for (const item of raw) {
     if (typeof item !== "object" || item === null) return "entries 항목이 객체가 아닙니다.";
-    const { memberId, state, reviewed, excused } = item as Record<string, unknown>;
+    const { memberId, state, excused } = item as Record<string, unknown>;
     if (typeof memberId !== "string" || !memberId) return "memberId 가 없습니다.";
     if (state !== "참여" && state !== "노쇼") return `상태 "${String(state)}" 는 참여/노쇼만 됩니다.`;
     entries.push({
       memberId,
       state,
-      reviewed: reviewed === true,
       excused: excused === true,
     });
   }
