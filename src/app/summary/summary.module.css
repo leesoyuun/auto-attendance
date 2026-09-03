@@ -1,0 +1,188 @@
+.page {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 28px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.top {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.032em;
+  margin: 0;
+}
+
+.chip {
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--t2);
+}
+
+.summaryLine {
+  font-size: 0.9375rem;
+  color: var(--t2);
+  margin: 0;
+}
+
+.summaryLine b {
+  color: var(--t1);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 12px;
+  border-radius: var(--r-m);
+}
+
+.row + .row {
+  border-top: 1px solid var(--line);
+}
+
+.rowOut {
+  background: var(--red-soft);
+}
+
+.who {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.name {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.badgeDraw {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.badgeWarn {
+  background: var(--fill);
+  color: var(--t2);
+}
+
+.badgeOut {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.points {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+
+.pointsGood {
+  color: var(--green);
+}
+
+.pointsBad {
+  color: var(--red);
+}
+
+.reasons {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--card);
+  border-radius: var(--r-l);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.reasonsTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+
+.guard {
+  margin: 0;
+  padding: 13px 15px;
+  border-radius: var(--r-m);
+  background: var(--red-soft);
+  color: var(--t2);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.guard b {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.reasonBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reasonName {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.reasonList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reasonList li {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: var(--t2);
+  font-variant-numeric: tabular-nums;
+}
+
+.footLink {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+  margin: 0;
+}

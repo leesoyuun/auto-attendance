@@ -1,0 +1,102 @@
+/*
+ * 토스 스타일 디자인 토큰.
+ *
+ * 테두리를 거의 쓰지 않고 배경색과 여백으로 구분하며, 12~16px 라운드와
+ * 굵고 자간 좁은 한글 제목을 씁니다. 다크 모드는 색을 뒤집는 게 아니라
+ * 따로 값을 지정합니다.
+ *
+ * 한글 웹폰트는 용량이 커서 인라인할 수 없으므로 시스템 폰트를 씁니다.
+ * Pretendard 가 설치돼 있으면 그것을 먼저 사용합니다.
+ */
+
+:root {
+  --bg: #f9fafb;
+  --card: #ffffff;
+  --fill: #f2f4f6;
+  --fill-strong: #e8ebed;
+  --line: #e5e8eb;
+  --t1: #191f28;
+  --t2: #4e5968;
+  --t3: #8b95a1;
+  --blue: #3182f6;
+  --blue-dark: #1b64da;
+  --blue-soft: #e8f2fe;
+  --red: #f04452;
+  --red-soft: #feecee;
+  --green: #00a661;
+  --green-soft: #e4f7ed;
+  --on-blue: #ffffff;
+  --shadow: 0 1px 3px rgb(25 31 40 / 4%), 0 8px 24px -12px rgb(25 31 40 / 10%);
+
+  --font: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+    "Malgun Gothic", system-ui, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  --r-s: 8px;
+  --r-m: 12px;
+  --r-l: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16181d;
+    --card: #1f2228;
+    --fill: #282c33;
+    --fill-strong: #333841;
+    --line: #33383f;
+    --t1: #f2f4f6;
+    --t2: #afb9ca;
+    --t3: #838a94;
+    --blue: #4e93f7;
+    --blue-dark: #3182f6;
+    --blue-soft: #1b2b44;
+    --red: #ff6b77;
+    --red-soft: #38211e;
+    --green: #2ecc8f;
+    --green-soft: #16352a;
+    --on-blue: #0f1114;
+    --shadow: 0 1px 3px rgb(0 0 0 / 30%), 0 8px 24px -12px rgb(0 0 0 / 50%);
+  }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--t1);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+a {
+  color: var(--blue);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
