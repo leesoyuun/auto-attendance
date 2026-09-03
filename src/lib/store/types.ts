@@ -40,6 +40,15 @@ export interface AttendanceStore {
    */
   hasMonthTab(month: IsoMonth): Promise<boolean>;
   createMonthTab(month: IsoMonth): Promise<{ created: boolean; reason?: string }>;
+
+  /**
+   * 캐시를 버립니다. 시트를 직접 고친 뒤 앱에 반영할 때 씁니다.
+   *
+   * **시트가 원본입니다.** 앱은 요청 수를 줄이려고 명단과 탭 배치를 캐시하는데,
+   * 그 사이 사람이 시트를 고치면 앱이 옛 값을 보게 됩니다. 동기화 버튼이
+   * 이걸 호출합니다.
+   */
+  refresh(): Promise<void>;
 }
 
 export interface DaySnapshot {

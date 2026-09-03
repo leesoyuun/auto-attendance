@@ -59,33 +59,32 @@ export class MockStore implements AttendanceStore {
     const make = (
       date: IsoDate,
       kind: EventKind,
-      entries: Array<[string, "참여" | "노쇼", boolean]>,
+      entries: Array<[string, "참여" | "노쇼"]>,
     ): AttendanceRecord[] =>
-      entries.map(([memberId, state, flag]) => ({
+      entries.map(([memberId, state]) => ({
         memberId,
         date,
         kind,
         state,
-        excused: state === "노쇼" ? flag : false,
         recordedAt: stamp,
       }));
 
     this.records = [
       ...make(week1, "일반", [
-        ["M002", "참여", true],
-        ["M003", "참여", true],
-        ["M004", "참여", false],
-        ["M010", "참여", true],
-        ["M011", "노쇼", true],
-        ["M013", "참여", true],
+        ["M002", "참여"],
+        ["M003", "참여"],
+        ["M004", "참여"],
+        ["M010", "참여"],
+        ["M011", "노쇼"],
+        ["M013", "참여"],
       ]),
       ...make(week2, "정기", [
-        ["M001", "참여", true],
-        ["M002", "참여", true],
-        ["M005", "참여", true],
-        ["M006", "참여", false],
-        ["M009", "참여", true],
-        ["M012", "노쇼", false],
+        ["M001", "참여"],
+        ["M002", "참여"],
+        ["M005", "참여"],
+        ["M006", "참여"],
+        ["M009", "참여"],
+        ["M012", "노쇼"],
       ]),
     ];
 
@@ -125,7 +124,6 @@ export class MockStore implements AttendanceStore {
       entries: rows.map((r) => ({
         memberId: r.memberId,
         state: r.state,
-        excused: r.excused,
       })),
     };
   }
@@ -157,7 +155,6 @@ export class MockStore implements AttendanceStore {
           date,
           kind,
           state: entry.state,
-          excused: entry.state === "노쇼" ? entry.excused : false,
           // 최초 기록 시각은 유지하고 수정 시각을 따로 남깁니다.
           recordedAt: before?.recordedAt ?? stamp,
           updatedAt: before ? stamp : undefined,
@@ -169,6 +166,9 @@ export class MockStore implements AttendanceStore {
   async listClosedMonths(): Promise<IsoMonth[]> {
     return [...this.closedMonths];
   }
+
+  /** 메모리 저장소라 캐시가 없습니다. 인터페이스를 맞추기 위한 구현입니다. */
+  async refresh(): Promise<void> {}
 
   async hasMonthTab(month: IsoMonth): Promise<boolean> {
     return this.monthTabs.includes(month);

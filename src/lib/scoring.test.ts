@@ -29,7 +29,6 @@ function attend(
     date,
     kind,
     state: "참여",
-    excused: false,
     recordedAt: "2026-08-31 21:00",
   };
 }
@@ -38,14 +37,12 @@ function noShow(
   memberId: string,
   date: IsoDate,
   kind: EventKind = "일반",
-  excused = false,
 ): AttendanceRecord {
   return {
     memberId,
     date,
     kind,
     state: "노쇼",
-    excused,
     recordedAt: "2026-08-31 21:00",
   };
 }
@@ -143,8 +140,10 @@ describe("노쇼 벌점", () => {
     expect(points([noShow(target.id, "2026-09-01")])["2026-09"]).toBe(RULES.noShowPenalty);
   });
 
-  it("면책되면 벌점이 없다", () => {
-    expect(points([noShow(target.id, "2026-09-01", "일반", true)])["2026-09"]).toBe(0);
+  it("노쇼를 취소하면 기록이 없어져 벌점도 없다", () => {
+    // 면책은 별도 플래그가 아니라 "찍었던 노쇼를 취소하는 것"입니다.
+    // 취소하면 기록 자체가 사라지므로 점수 계산에 아무것도 남지 않습니다.
+    expect(points([])["2026-09"] ?? 0).toBe(0);
   });
 
   it("정기러닝 노쇼도 동일하게 −10점이다", () => {
@@ -195,13 +194,8 @@ describe("경고 판정", () => {
     expect(result.warnings.count).toBe(1); // 첫 주 것만
   });
 
-  it("사전 고지로 면책되면 경고가 면제된다", () => {
-    const records = [noShow(target.id, "2026-09-01", "일반", true)];
-    expect(evaluate(records, "2026-09-06").warnings.count).toBe(0);
-  });
-
-  it("면책 없는 노쇼는 경고 대상이다", () => {
-    const records = [noShow(target.id, "2026-09-01", "일반", false)];
+  it("노쇼는 경고 대상이다", () => {
+    const records = [noShow(target.id, "2026-09-01")];
     expect(evaluate(records, "2026-09-06").warnings.count).toBe(1);
   });
 

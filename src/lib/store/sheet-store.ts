@@ -60,6 +60,16 @@ export class CrewSheetStore implements AttendanceStore {
     this.memberCache = null;
   }
 
+  /**
+   * 다음 조회에서 시트를 다시 읽게 합니다.
+   *
+   * 시트가 원본이므로, 사람이 시트를 직접 고쳤을 때 앱이 캐시된 옛 값을 계속
+   * 보여주면 안 됩니다. 동기화 버튼이 이 경로를 씁니다.
+   */
+  async refresh(): Promise<void> {
+    this.invalidate();
+  }
+
   private async monthTabs(): Promise<TabIndex[]> {
     if (this.tabCache) return this.tabCache;
 
@@ -156,7 +166,7 @@ export class CrewSheetStore implements AttendanceStore {
       // B열이 index 0 이므로 대상 컬럼은 (column - 1) 만큼 떨어져 있습니다.
       const state = parseCell(row[column - 1] ?? null);
       if (!state) continue;
-      entries.push({ memberId: name, state, excused: false });
+      entries.push({ memberId: name, state });
     }
 
     if (entries.length === 0) return null;
@@ -191,7 +201,6 @@ export class CrewSheetStore implements AttendanceStore {
             date,
             kind: "일반",
             state,
-            excused: false,
             recordedAt: "",
           });
         }

@@ -29,7 +29,7 @@ export const RULES = {
   weeklySoloCap: 10,
   /** 혼뛰 후기 인정 최소 시간(분) */
   soloMinMinutes: 40,
-  /** 노쇼 1회 (면책 시 미적용) */
+  /** 노쇼 1회. 취소하면 기록이 사라져 벌점도 없어집니다(= 면책) */
   noShowPenalty: -10,
   /** 월말 추첨 자격 기준 */
   raffleThreshold: 100,
@@ -54,7 +54,6 @@ export interface WeekOutcome {
   hadEvents: boolean;
   attended: number;
   noShows: number;
-  excusedNoShows: number;
   warned: boolean;
   /** 판정을 건너뛴 이유 */
   skipped: "no-events" | "before-join" | null;
@@ -188,14 +187,11 @@ export function computePointLines(
     });
   }
 
-  // 4) 노쇼 벌점 — 정기·일반 동일하게 −10, 면책되면 없음.
+  // 4) 노쇼 벌점 — 정기·일반 동일하게 −10.
   //    상한은 얻은 점수에만 걸고 벌점은 그 뒤에 차감하므로 상한과 무관합니다.
+  //    면책은 기록을 취소하는 것이라, 여기 올 기록 자체가 없습니다.
   for (const r of byDate(mine.filter((x) => x.state === "노쇼"))) {
-    if (r.excused) {
-      lines.push({ date: r.date, amount: 0, label: "노쇼 · 사전 고지 면책" });
-    } else {
-      lines.push({ date: r.date, amount: RULES.noShowPenalty, label: "노쇼" });
-    }
+    lines.push({ date: r.date, amount: RULES.noShowPenalty, label: "노쇼" });
   }
 
   return byDate(lines);
@@ -229,14 +225,12 @@ function evaluateWeeks(
     const rows = mineByWeek.get(weekStart) ?? [];
     const attended = rows.filter((r) => r.state === "참여");
     const noShows = rows.filter((r) => r.state === "노쇼");
-    const excusedNoShows = noShows.filter((r) => r.excused);
 
     const base: Omit<WeekOutcome, "warned" | "skipped" | "note"> = {
       weekStart,
       hadEvents: eventWeeks.has(weekStart),
       attended: attended.length,
       noShows: noShows.length,
-      excusedNoShows: excusedNoShows.length,
     };
 
     // 주가 시작되기 전에 가입한 사람만 그 주로 판정합니다. 주 중간에 가입했으면
@@ -252,10 +246,6 @@ function evaluateWeeks(
 
     if (attended.length > 0) {
       return { ...base, warned: false, skipped: null, note: `참여 ${attended.length}회` };
-    }
-
-    if (excusedNoShows.length > 0) {
-      return { ...base, warned: false, skipped: null, note: "사전 고지로 면책" };
     }
 
     const why = noShows.length > 0 ? `노쇼 ${noShows.length}회` : "참여 없음";
@@ -301,7 +291,7 @@ export function evaluateMember(
       continue;
     }
 
-    if (week.attended > 0 || week.excusedNoShows > 0) {
+    if (week.attended > 0) {
       streak = 0;
     } else {
       streak += 1;

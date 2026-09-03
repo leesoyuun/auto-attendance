@@ -8,6 +8,15 @@
  */
 export type AttendanceState = "참여" | "노쇼";
 
+/**
+ * 면책은 따로 저장하지 않습니다.
+ *
+ * 노쇼를 찍었다가 취소하면 그 기록이 사라지고, 그게 곧 면책입니다. 별도 플래그를
+ * 두면 시트에 담을 자리가 없는데(셀 하나에 점수만 들어감), 취소로 처리하면
+ * 자리가 필요 없습니다. 잘못 찍은 것을 되돌리는 일과 같은 동작이라 헷갈릴 것도
+ * 없습니다.
+ */
+
 /** 정기러닝은 점수 규칙이 달라서 날짜와 함께 구분을 저장합니다. */
 export type EventKind = "정기" | "일반";
 
@@ -36,8 +45,6 @@ export interface AttendanceRecord {
   date: IsoDate;
   kind: EventKind;
   state: AttendanceState;
-  /** 노쇼일 때만 의미 있음. 사전 고지로 면책되면 벌점과 경고가 면제됩니다. */
-  excused: boolean;
   recordedAt: string;
   updatedAt?: string;
 }
@@ -53,5 +60,4 @@ export interface SoloRun {
 export interface DayEntry {
   memberId: string;
   state: AttendanceState;
-  excused: boolean;
 }

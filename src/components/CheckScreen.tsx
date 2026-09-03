@@ -9,7 +9,7 @@ import { activeMembersOn } from "@/lib/roster";
 import type { AttendanceState, DayEntry, EventKind, IsoDate, Member } from "@/lib/types";
 import styles from "./CheckScreen.module.css";
 
-type Marks = Record<string, { state: AttendanceState; flag: boolean }>;
+type Marks = Record<string, AttendanceState>;
 
 interface Props {
   today: IsoDate;
@@ -65,12 +65,7 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
       setMonthTabMissing(data.monthTabExists === false);
       if (data.snapshot) {
         const next: Marks = {};
-        for (const entry of data.snapshot.entries) {
-          next[entry.memberId] = {
-            state: entry.state,
-            flag: entry.excused,
-          };
-        }
+        for (const entry of data.snapshot.entries) next[entry.memberId] = entry.state;
         setMarks(next);
         setKind(data.snapshot.kind);
         setLoadedFrom(target);
@@ -107,8 +102,8 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
     let noShow = 0;
     for (const member of pool) {
       const mark = marks[member.id];
-      if (mark?.state === "참여") attend += 1;
-      else if (mark?.state === "노쇼") noShow += 1;
+      if (mark === "참여") attend += 1;
+      else if (mark === "노쇼") noShow += 1;
     }
     return { attend, noShow };
   }, [pool, marks]);
@@ -121,20 +116,70 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
     setMessage(null);
     setMarks((prev) => {
       const next = { ...prev };
-      // 같은 버튼을 다시 누르면 해제됩니다. 순환 탭이면 되돌릴 수 없습니다.
-      if (next[memberId]?.state === state) delete next[memberId];
-      else next[memberId] = { state, flag: false };
+      // 같은 버튼을 다시 누르면 해제됩니다. 저장하면 그 칸이 비워지므로,
+      // 노쇼를 취소하는 것이 곧 면책이고 잘못 찍은 것을 되돌리는 방법입니다.
+      if (next[memberId] === state) delete next[memberId];
+      else next[memberId] = state;
       return next;
     });
   }
 
-  function toggleFlag(memberId: string) {
-    if (closed) return;
-    setMarks((prev) => {
-      const mark = prev[memberId];
-      if (!mark) return prev;
-      return { ...prev, [memberId]: { ...mark, flag: !mark.flag } };
-    });
+  /**
+   * 시트에서 다시 읽어옵니다.
+   *
+   * 시트가 원본입니다. 누군가 시트를 직접 고쳤을 때 앱이 캐시된 옛 값을 계속
+   * 보여주지 않도록, 명단과 그 날 기록을 함께 새로 가져옵니다.
+   * 화면에서 아직 저장하지 않은 체크는 시트 값으로 덮입니다.
+   */
+  async function sync() {
+    setBusy(true);
+    setMessage(null);
+    try {
+      const response = await fetch("/api/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date }),
+      });
+      const data = (await response.json()) as {
+        members?: Member[];
+        snapshot?: { kind: EventKind; entries: DayEntry[] } | null;
+        closed?: boolean;
+        monthTabExists?: boolean;
+        error?: string;
+      };
+      if (!response.ok) {
+        setMessage({ tone: "warn", text: data.error ?? "동기화하지 못했습니다." });
+        return;
+      }
+
+      if (data.members) setMembers(data.members);
+      setClosed(data.closed === true);
+      setMonthTabMissing(data.monthTabExists === false);
+
+      if (data.snapshot) {
+        const next: Marks = {};
+        for (const entry of data.snapshot.entries) next[entry.memberId] = entry.state;
+        setMarks(next);
+        setKind(data.snapshot.kind);
+        setLoadedFrom(date);
+        setMessage({
+          tone: "ok",
+          text: `시트에서 ${data.snapshot.entries.length}명, 명단 ${data.members?.length ?? 0}명을 가져왔습니다.`,
+        });
+      } else {
+        setMarks({});
+        setKind("일반");
+        setLoadedFrom(null);
+        setMessage({
+          tone: "ok",
+          text: `시트를 다시 읽었습니다. 이 날 기록은 없습니다. (명단 ${data.members?.length ?? 0}명)`,
+        });
+      }
+    } catch {
+      setMessage({ tone: "warn", text: "서버에 연결하지 못했습니다." });
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function addMember() {
@@ -153,7 +198,7 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
         return;
       }
       setMembers((prev) => [...prev, data.member!]);
-      setMarks((prev) => ({ ...prev, [data.member!.id]: { state: "참여", flag: false } }));
+      setMarks((prev) => ({ ...prev, [data.member!.id]: "참여" }));
       setQuery("");
       setMessage({ tone: "ok", text: `${data.member.name} 을 명단에 추가했습니다.` });
     } finally {
@@ -195,11 +240,7 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
     const known = new Set(pool.map((m) => m.id));
     const entries: DayEntry[] = Object.entries(marks)
       .filter(([memberId]) => known.has(memberId))
-      .map(([memberId, mark]) => ({
-        memberId,
-        state: mark.state,
-        excused: mark.state === "노쇼" ? mark.flag : false,
-      }));
+      .map(([memberId, state]) => ({ memberId, state }));
 
     try {
       const response = await fetch(`/api/day/${date}`, {
@@ -226,7 +267,18 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
   return (
     <main className={styles.page}>
       <header className={styles.top}>
-        <h1 className={styles.title}>출석 체크</h1>
+        <div className={styles.titleRow}>
+          <h1 className={styles.title}>출석 체크</h1>
+          <button
+            type="button"
+            className={styles.syncBtn}
+            disabled={busy}
+            onClick={sync}
+            aria-label="시트에서 다시 읽어오기"
+          >
+            {busy ? "…" : "↻ 동기화"}
+          </button>
+        </div>
         <span className={`${styles.chip} ${editing && !closed ? styles.chipEditing : ""}`}>
           {closed ? "확정된 달 · 읽기 전용" : editing ? "저장된 기록 수정 중" : "새로 기록"}
         </span>
@@ -338,8 +390,7 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
 
       <ul className={styles.list}>
         {visible.map((member) => {
-          const mark = marks[member.id];
-          const state = mark?.state;
+          const state = marks[member.id];
           return (
             <li key={member.id} className={styles.row}>
               <span className={styles.who}>
@@ -359,20 +410,6 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
               </span>
 
               <span className={styles.actions}>
-                {/* 면책은 노쇼일 때만 의미가 있어서 그때만 참여 왼쪽에 붙습니다.
-                    자리를 비워두지 않고 없애는 편이 좁은 화면에서 낫습니다. */}
-                {state === "노쇼" && (
-                  <button
-                    type="button"
-                    className={`${styles.subToggle} ${mark?.flag ? styles.subToggleOn : ""}`}
-                    aria-pressed={mark?.flag ?? false}
-                    aria-label={`${member.name} 사전 고지 면책`}
-                    disabled={closed}
-                    onClick={() => toggleFlag(member.id)}
-                  >
-                    면책
-                  </button>
-                )}
                 <button
                   type="button"
                   className={`${styles.stateBtn} ${state === "참여" ? styles.attendOn : ""}`}

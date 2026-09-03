@@ -13,11 +13,46 @@
   gap: 6px;
 }
 
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .title {
   font-size: 1.5rem;
   font-weight: 700;
   letter-spacing: -0.032em;
   margin: 0;
+}
+
+/* 시트가 원본이라, 다시 읽어오는 경로가 항상 보이는 자리에 있어야 합니다. */
+.syncBtn {
+  flex: none;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--t2);
+  background: var(--fill);
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 130ms ease;
+}
+
+.syncBtn:hover:not(:disabled) {
+  background: var(--fill-strong);
+}
+
+.syncBtn:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.syncBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .chip {
@@ -260,40 +295,6 @@
 
 .noShowOn:hover:not(:disabled) {
   background: var(--red);
-}
-
-/* 참여 버튼 왼쪽에 붙는 후기·면책 토글. 상태 버튼보다 한 단계 약하게 보이도록
-   테두리만 두고 배경을 비웁니다. */
-.subToggle {
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: var(--t3);
-  background: transparent;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 7px 12px;
-  cursor: pointer;
-  flex: none;
-}
-
-.subToggle:hover:not(:disabled) {
-  background: var(--fill);
-}
-
-.subToggle:focus-visible {
-  outline: 2px solid var(--blue);
-  outline-offset: 2px;
-}
-
-.subToggle:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.subToggleOn {
-  background: var(--blue-soft);
-  border-color: var(--blue-soft);
-  color: var(--blue);
 }
 
 .blank {

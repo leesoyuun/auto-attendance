@@ -79,8 +79,8 @@ describe.skipIf(!config)("크루 시트 어댑터 (실제 시트)", () => {
     const [a, b] = members;
 
     await store.saveDay(TEST_DATE, "일반", [
-      { memberId: a.id, state: "참여", excused: false },
-      { memberId: b.id, state: "노쇼", excused: false },
+      { memberId: a.id, state: "참여" },
+      { memberId: b.id, state: "노쇼" },
     ]);
 
     const after = await store.getDay(TEST_DATE);
@@ -95,7 +95,7 @@ describe.skipIf(!config)("크루 시트 어댑터 (실제 시트)", () => {
   it("탭이 없는 날짜에 저장하면 막는다", async () => {
     await expect(
       store.saveDay("2030-01-15", "일반", [
-        { memberId: "없는사람/00", state: "참여", excused: false },
+        { memberId: "없는사람/00", state: "참여" },
       ]),
     ).rejects.toThrow(/월 탭이 없습니다/);
   });
