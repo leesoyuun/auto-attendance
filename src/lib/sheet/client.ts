@@ -44,6 +44,14 @@ export type CellValue = string | number | boolean | null;
  */
 export class SheetClient {
   private auth: JWT;
+  /**
+   * 탭 목록 캐시.
+   *
+   * 탭이 있는지 확인하는 코드가 여러 곳에 있어서, 캐시가 없으면 한 동작에
+   * listTabs 가 4~5회 나갑니다. 분당 60회 제한에 금방 걸립니다.
+   * 탭을 만들거나 지우는 batchUpdate 뒤에 자동으로 비웁니다.
+   */
+  private tabs: TabProperties[] | null = null;
 
   constructor(private config: SheetConfig) {
     this.auth = new JWT({
@@ -91,6 +99,7 @@ export class SheetClient {
   }
 
   async listTabs(): Promise<TabProperties[]> {
+    if (this.tabs) return this.tabs;
     const data = await this.request<{
       sheets?: Array<{
         properties: {
@@ -101,12 +110,18 @@ export class SheetClient {
       }>;
     }>("?fields=sheets(properties(sheetId,title,gridProperties(rowCount,columnCount)))");
 
-    return (data.sheets ?? []).map((s) => ({
+    this.tabs = (data.sheets ?? []).map((s) => ({
       sheetId: s.properties.sheetId,
       title: s.properties.title,
       rowCount: s.properties.gridProperties?.rowCount ?? 0,
       columnCount: s.properties.gridProperties?.columnCount ?? 0,
     }));
+    return this.tabs;
+  }
+
+  /** 탭 목록 캐시를 버립니다. 탭을 만들거나 지운 뒤 자동으로 호출됩니다. */
+  forgetTabs(): void {
+    this.tabs = null;
   }
 
   /**
@@ -163,9 +178,12 @@ export class SheetClient {
   }
 
   async batchUpdate<T = unknown>(requests: unknown[]): Promise<T> {
-    return this.request<T>(":batchUpdate", {
+    const result = await this.request<T>(":batchUpdate", {
       method: "POST",
       body: JSON.stringify({ requests }),
     });
+    // addSheet / deleteSheet / duplicateSheet 가 탭 목록을 바꿉니다.
+    this.forgetTabs();
+    return result;
   }
 }
