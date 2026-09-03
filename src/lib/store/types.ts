@@ -23,6 +23,10 @@ export interface AttendanceStore {
   /** 전체 기록. 점수·경고는 이력 전체를 봐야 계산됩니다. */
   listRecords(): Promise<AttendanceRecord[]>;
   listSoloRuns(): Promise<SoloRun[]>;
+  /** 혼뛰 후기를 추가합니다. 40분 미달도 기록은 남고 점수 계산에서만 빠집니다. */
+  addSoloRun(run: SoloRun): Promise<void>;
+  /** 잘못 넣은 혼뛰 후기를 지웁니다. 되돌릴 방법이 있어야 합니다. */
+  deleteSoloRun(run: SoloRun): Promise<boolean>;
 
   /**
    * 그 날짜의 기록을 저장합니다. 같은 날짜·같은 사람의 행이 있으면 새 행을

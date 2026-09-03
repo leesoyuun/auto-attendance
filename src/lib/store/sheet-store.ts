@@ -1,6 +1,13 @@
 import { kstToday, monthOf } from "../date";
 import { RULES } from "../scoring";
 import { SheetClient, type CellValue, type SheetConfig } from "../sheet/client";
+import {
+  addSoloRun,
+  deleteSoloRun,
+  readRegularDates,
+  readSoloRuns,
+  setRegularDate,
+} from "../sheet/aux-tabs";
 import { ACTIVE_STATUS, ensureMonthTab, readRoster } from "../sheet/month-tab";
 import { parseCell, parseTabDates } from "../sheet/tab-dates";
 import type {
@@ -49,6 +56,7 @@ export class CrewSheetStore implements AttendanceStore {
   private client: SheetClient;
   private tabCache: TabIndex[] | null = null;
   private memberCache: Member[] | null = null;
+  private regularCache: IsoDate[] | null = null;
 
   constructor(config: SheetConfig) {
     this.client = new SheetClient(config);
@@ -58,6 +66,13 @@ export class CrewSheetStore implements AttendanceStore {
   private invalidate(): void {
     this.tabCache = null;
     this.memberCache = null;
+    this.regularCache = null;
+  }
+
+  /** 정기러닝으로 지정된 날짜. 셀에 구분을 담을 수 없어 별도 탭에 둡니다. */
+  private async regularDates(): Promise<IsoDate[]> {
+    if (!this.regularCache) this.regularCache = await readRegularDates(this.client);
+    return this.regularCache;
   }
 
   /**
@@ -67,6 +82,8 @@ export class CrewSheetStore implements AttendanceStore {
    * 보여주면 안 됩니다. 동기화 버튼이 이 경로를 씁니다.
    */
   async refresh(): Promise<void> {
+    // 클라이언트의 탭 목록 캐시까지 버려야 새로 만든 탭을 알아챕니다.
+    this.client.forgetTabs();
     this.invalidate();
   }
 
@@ -170,12 +187,16 @@ export class CrewSheetStore implements AttendanceStore {
     }
 
     if (entries.length === 0) return null;
-    // 정기러닝 여부는 이 시트에 저장되지 않습니다. 아래 saveDay 주석 참고.
-    return { date, kind: "일반", entries };
+    const regular = await this.regularDates();
+    return { date, kind: regular.includes(date) ? "정기" : "일반", entries };
   }
 
   async listRecords(): Promise<AttendanceRecord[]> {
-    const tabs = (await this.monthTabs()).filter((t) => t.dates.size > 0);
+    const [tabs, regular] = await Promise.all([
+      this.monthTabs().then((all) => all.filter((t) => t.dates.size > 0)),
+      this.regularDates(),
+    ]);
+    const regularSet = new Set(regular);
     // 탭 전체를 한 요청으로 읽습니다. 탭마다 부르면 분당 제한에 걸립니다.
     const blocks = await this.client.batchGetValues(
       tabs.map(
@@ -199,7 +220,7 @@ export class CrewSheetStore implements AttendanceStore {
           records.push({
             memberId: name,
             date,
-            kind: "일반",
+            kind: regularSet.has(date) ? "정기" : "일반",
             state,
             recordedAt: "",
           });
@@ -209,19 +230,31 @@ export class CrewSheetStore implements AttendanceStore {
     return records;
   }
 
-  /** 이 시트에는 혼뛰 후기 탭이 없습니다. 만들면 여기에 연결합니다. */
   async listSoloRuns(): Promise<SoloRun[]> {
-    return [];
+    return readSoloRuns(this.client);
+  }
+
+  /** 혼뛰 후기를 추가합니다. 탭이 없으면 만듭니다. */
+  async addSoloRun(run: SoloRun): Promise<void> {
+    const members = await this.listMembers();
+    if (!members.some((m) => m.id === run.memberId)) {
+      throw new Error(`"${run.memberId}" 은 활동 명단에 없습니다.`);
+    }
+    await addSoloRun(this.client, run);
+  }
+
+  /** 잘못 넣은 혼뛰 후기를 지웁니다. */
+  async deleteSoloRun(run: SoloRun): Promise<boolean> {
+    return deleteSoloRun(this.client, run);
   }
 
   /**
    * 그 날짜 열에 값을 씁니다.
    *
-   * 정기러닝 구분은 저장하지 않습니다. 이 시트는 셀 하나에 점수만 담고, 정기러닝
-   * 30/40점 규칙을 담을 자리가 없습니다. 지금은 참여 10 / 노쇼 −10 만 기록하고,
-   * 정기러닝 가산은 크루장이 직접 넣는 기존 방식을 유지합니다.
+   * 셀에는 참여 10 / 노쇼 −10 만 들어갑니다. 정기러닝 구분은 셀에 담을 수 없어
+   * `정기러닝일` 탭에 날짜만 남기고, 30/40점 가산은 집계에서 계산합니다.
    */
-  async saveDay(date: IsoDate, _kind: EventKind, entries: DayEntry[]): Promise<void> {
+  async saveDay(date: IsoDate, kind: EventKind, entries: DayEntry[]): Promise<void> {
     const found = await this.tabForDate(date);
     if (!found) {
       throw new Error(
@@ -273,6 +306,7 @@ export class CrewSheetStore implements AttendanceStore {
       values,
       "RAW",
     );
+    await setRegularDate(this.client, date, kind === "정기");
     this.invalidate();
   }
 

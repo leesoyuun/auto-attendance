@@ -463,7 +463,7 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
       </button>
 
       <p className={styles.footLink}>
-        <Link href="/summary">월별 집계 보기 →</Link>
+        <Link href="/solo">혼뛰 후기</Link> · <Link href="/summary">월별 집계</Link>
       </p>
     </main>
   );

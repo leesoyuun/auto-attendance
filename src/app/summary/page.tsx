@@ -105,7 +105,7 @@ export default async function SummaryPage({ searchParams }: Props) {
       )}
 
       <p className={styles.footLink}>
-        <Link href="/">← 출석 체크로</Link>
+        <Link href="/">← 출석 체크로</Link> · <Link href="/solo">혼뛰 후기</Link>
       </p>
     </main>
   );

@@ -136,6 +136,19 @@ export class MockStore implements AttendanceStore {
     return [...this.soloRuns];
   }
 
+  async addSoloRun(run: SoloRun): Promise<void> {
+    this.soloRuns.push({ ...run });
+  }
+
+  async deleteSoloRun(run: SoloRun): Promise<boolean> {
+    const index = this.soloRuns.findIndex(
+      (r) => r.memberId === run.memberId && r.date === run.date && r.minutes === run.minutes,
+    );
+    if (index === -1) return false;
+    this.soloRuns.splice(index, 1);
+    return true;
+  }
+
   async saveDay(date: IsoDate, kind: EventKind, entries: DayEntry[]): Promise<void> {
     const month = monthOf(date);
     if (this.closedMonths.includes(month)) throw new MonthClosedError(month);
