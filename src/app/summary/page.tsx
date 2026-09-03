@@ -1,9 +1,10 @@
 import Link from "next/link";
 
+import SetupNotice from "@/components/SetupNotice";
 import { kstToday, monthOf } from "@/lib/date";
 import { withFirstSeenJoinDates } from "@/lib/roster";
 import { RULES, monthlySummary } from "@/lib/scoring";
-import { getStore } from "@/lib/store";
+import { getStore, missingEnv } from "@/lib/store";
 import styles from "./summary.module.css";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,9 @@ interface Props {
 const MONTH_PATTERN = /^\d{4}-\d{2}$/;
 
 export default async function SummaryPage({ searchParams }: Props) {
+  const missing = missingEnv();
+  if (missing.length > 0) return <SetupNotice missing={missing} />;
+
   const params = await searchParams;
   const month =
     params.month && MONTH_PATTERN.test(params.month) ? params.month : monthOf(kstToday());

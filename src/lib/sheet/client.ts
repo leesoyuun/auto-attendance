@@ -13,16 +13,30 @@ export interface SheetConfig {
   privateKey: string;
 }
 
+/** 시트 연동에 반드시 필요한 환경변수. */
+export const REQUIRED_ENV = [
+  "GOOGLE_SHEETS_ID",
+  "GOOGLE_SERVICE_ACCOUNT_EMAIL",
+  "GOOGLE_PRIVATE_KEY",
+] as const;
+
+/**
+ * 비어 있는 환경변수 이름. 전부 있으면 빈 배열입니다.
+ *
+ * "설정이 됐는가"의 판단은 여기 하나뿐입니다. 화면이 안내를 띄울지 결정할 때도
+ * 이 함수를 씁니다 — 판단이 두 곳에 있으면 갈라집니다.
+ */
+export function missingEnv(): string[] {
+  return REQUIRED_ENV.filter((key) => !process.env[key]);
+}
+
 export function configFromEnv(): SheetConfig | null {
-  const spreadsheetId = process.env.GOOGLE_SHEETS_ID;
-  const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-  const privateKey = process.env.GOOGLE_PRIVATE_KEY;
-  if (!spreadsheetId || !clientEmail || !privateKey) return null;
+  if (missingEnv().length > 0) return null;
   return {
-    spreadsheetId,
-    clientEmail,
+    spreadsheetId: process.env.GOOGLE_SHEETS_ID ?? "",
+    clientEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ?? "",
     // .env 한 줄에 담으려면 개행을 \n 으로 적게 되므로 되돌립니다.
-    privateKey: privateKey.replace(/\\n/g, "\n"),
+    privateKey: (process.env.GOOGLE_PRIVATE_KEY ?? "").replace(/\\n/g, "\n"),
   };
 }
 

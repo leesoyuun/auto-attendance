@@ -11,8 +11,8 @@ import type {
 /**
  * 저장소 인터페이스.
  *
- * UI와 계산은 이 인터페이스만 알고 있어서, 구글 시트를 붙이든 목 데이터를 쓰든
- * 화면 코드를 고칠 필요가 없습니다. 개발 중에는 MockStore, 실제로는 GoogleSheetsStore.
+ * UI와 계산은 이 인터페이스만 알고 있어서, 저장소를 바꿔도 화면 코드를 고칠
+ * 필요가 없습니다. 지금 구현은 `CrewSheetStore` 하나뿐입니다.
  */
 export interface AttendanceStore {
   listMembers(): Promise<Member[]>;
