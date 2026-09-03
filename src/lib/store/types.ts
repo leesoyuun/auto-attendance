@@ -32,6 +32,14 @@ export interface AttendanceStore {
 
   /** 확정된 달은 읽기 전용입니다. 고치면 끝난 추첨 결과가 뒤집힙니다. */
   listClosedMonths(): Promise<IsoMonth[]>;
+
+  /**
+   * 그 달의 시트 탭이 있는지. 없으면 화면에 "새 달 추가" 버튼이 뜹니다.
+   * 자동으로 만들지 않는 이유는, 탭 생성이 시트를 바꾸는 일이라 사람이
+   * 의도적으로 눌러야 하기 때문입니다.
+   */
+  hasMonthTab(month: IsoMonth): Promise<boolean>;
+  createMonthTab(month: IsoMonth): Promise<{ created: boolean; reason?: string }>;
 }
 
 export interface DaySnapshot {

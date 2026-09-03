@@ -20,6 +20,8 @@ interface Props {
 interface DayResponse {
   snapshot: { date: IsoDate; kind: EventKind; entries: DayEntry[] } | null;
   closed: boolean;
+  monthTabExists: boolean;
+  month: string;
   error?: string;
 }
 
@@ -38,6 +40,8 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
 
   // 확정된 달은 서버가 다시 확인해주지만, 화면도 미리 알고 있어야 버튼을 잠글 수 있습니다.
   const [closed, setClosed] = useState(() => closedMonths.includes(monthOf(today)));
+  // 그 달 시트 탭이 없으면 저장할 곳이 없습니다. 추가 버튼을 띄웁니다.
+  const [monthTabMissing, setMonthTabMissing] = useState(false);
 
   const requestId = useRef(0);
 
@@ -58,6 +62,7 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
       }
 
       setClosed(data.closed);
+      setMonthTabMissing(data.monthTabExists === false);
       if (data.snapshot) {
         const next: Marks = {};
         for (const entry of data.snapshot.entries) {
@@ -151,6 +156,31 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
       setMarks((prev) => ({ ...prev, [data.member!.id]: { state: "참여", flag: false } }));
       setQuery("");
       setMessage({ tone: "ok", text: `${data.member.name} 을 명단에 추가했습니다.` });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function createMonthTab() {
+    const month = monthOf(date);
+    setBusy(true);
+    setMessage(null);
+    try {
+      const response = await fetch("/api/month-tab", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ month }),
+      });
+      const data = (await response.json()) as { created?: boolean; error?: string };
+      if (!response.ok) {
+        setMessage({ tone: "warn", text: data.error ?? "탭을 만들지 못했습니다." });
+        return;
+      }
+      setMonthTabMissing(false);
+      setMessage({ tone: "ok", text: `${month} 탭을 시트에 추가했습니다.` });
+      await loadDay(date);
+    } catch {
+      setMessage({ tone: "warn", text: "서버에 연결하지 못했습니다." });
     } finally {
       setBusy(false);
     }
@@ -256,6 +286,18 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
           <b>확정된 달입니다.</b> 이 달 점수는 고정돼 있어서, 수정하려면 시트의 확정 목록에서
           이 달을 지운 뒤에 다시 시도해주세요.
         </p>
+      )}
+
+      {monthTabMissing && !closed && (
+        <>
+          <p className={`${styles.notice} ${styles.noticeInfo}`}>
+            <b>{monthOf(date)} 시트 탭이 없습니다.</b> 새 달이 시작되면 탭을 한 번 추가해야
+            출석을 기록할 수 있습니다. 직전 탭을 복제해서 날짜와 수식을 맞춰 만듭니다.
+          </p>
+          <button type="button" className={styles.cta} disabled={busy} onClick={createMonthTab}>
+            {busy ? "만들고 있습니다…" : `${monthOf(date)} 탭 추가하기`}
+          </button>
+        </>
       )}
 
       {message && (
@@ -369,12 +411,14 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
       <button
         type="button"
         className={styles.cta}
-        disabled={closed || marked === 0 || busy}
+        disabled={closed || monthTabMissing || marked === 0 || busy}
         onClick={save}
       >
         {closed
           ? "확정 해제 후 수정 가능"
-          : busy
+          : monthTabMissing
+            ? "탭을 먼저 추가해주세요"
+            : busy
             ? "처리 중…"
             : marked === 0
               ? "저장"

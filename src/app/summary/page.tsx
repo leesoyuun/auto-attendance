@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { kstToday, monthOf } from "@/lib/date";
+import { withFirstSeenJoinDates } from "@/lib/roster";
 import { RULES, monthlySummary } from "@/lib/scoring";
 import { getStore } from "@/lib/store";
 import styles from "./summary.module.css";
@@ -26,7 +27,10 @@ export default async function SummaryPage({ searchParams }: Props) {
     store.listClosedMonths(),
   ]);
 
-  const rows = monthlySummary(members, records, soloRuns, month);
+  // 시트에 가입일 열이 없어서, 기록에 처음 등장한 날로 보정합니다.
+  // 보정하지 않으면 최근 가입자에게 가입 전 주의 경고가 소급됩니다.
+  const dated = withFirstSeenJoinDates(members, records, kstToday());
+  const rows = monthlySummary(dated, records, soloRuns, month);
   const closed = closedMonths.includes(month);
   const eligible = rows.filter((r) => r.raffleEligible).length;
   const candidates = rows.filter((r) => r.expulsionCandidate);

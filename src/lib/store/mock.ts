@@ -22,6 +22,7 @@ export class MockStore implements AttendanceStore {
   private records: AttendanceRecord[];
   private soloRuns: SoloRun[];
   private closedMonths: IsoMonth[];
+  private monthTabs: IsoMonth[];
 
   constructor(today: IsoDate = kstToday()) {
     this.members = [
@@ -97,6 +98,8 @@ export class MockStore implements AttendanceStore {
     // 두 달 전을 확정된 달로 둡니다. 일수로 빼면 오늘이 월 중순일 때
     // 수정 시연용 지난주 기록까지 같이 잠기는 날이 생깁니다.
     this.closedMonths = [monthOf(addMonths(today, -2))];
+    // 이번 달 탭은 아직 없는 상태로 두어, 추가 버튼이 뜨는 걸 확인할 수 있게 합니다.
+    this.monthTabs = [monthOf(addMonths(today, -2)), monthOf(addMonths(today, -1))];
   }
 
   async listMembers(): Promise<Member[]> {
@@ -165,5 +168,15 @@ export class MockStore implements AttendanceStore {
 
   async listClosedMonths(): Promise<IsoMonth[]> {
     return [...this.closedMonths];
+  }
+
+  async hasMonthTab(month: IsoMonth): Promise<boolean> {
+    return this.monthTabs.includes(month);
+  }
+
+  async createMonthTab(month: IsoMonth): Promise<{ created: boolean; reason?: string }> {
+    if (this.monthTabs.includes(month)) return { created: false, reason: "이미 있습니다" };
+    this.monthTabs.push(month);
+    return { created: true };
   }
 }

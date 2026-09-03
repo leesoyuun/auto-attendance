@@ -1,5 +1,5 @@
 import { matchesName } from "./hangul";
-import type { IsoDate, Member } from "./types";
+import type { AttendanceRecord, IsoDate, Member } from "./types";
 
 /**
  * 그 날짜에 이미 가입해 있었는지.
@@ -36,4 +36,26 @@ export function nextMemberId(members: Member[]): string {
     return Number.isFinite(n) && n > acc ? n : acc;
   }, 0);
   return `M${String(max + 1).padStart(3, "0")}`;
+}
+
+/**
+ * 가입일을 "기록에 처음 등장한 날"로 보정합니다.
+ *
+ * 크루 시트에는 가입일 열이 없습니다. 보정하지 않으면 최근 가입자에게 가입 전
+ * 주의 미참여 경고가 소급됩니다. 기록이 아예 없는 사람은 `fallback`(보통 오늘)을
+ * 써서, 판정 대상에서 자연히 빠지게 합니다.
+ *
+ * 이미 읽어둔 기록을 넘겨받으므로 추가 조회가 없습니다.
+ */
+export function withFirstSeenJoinDates(
+  members: Member[],
+  records: AttendanceRecord[],
+  fallback: IsoDate,
+): Member[] {
+  const firstSeen = new Map<string, IsoDate>();
+  for (const record of records) {
+    const current = firstSeen.get(record.memberId);
+    if (!current || record.date < current) firstSeen.set(record.memberId, record.date);
+  }
+  return members.map((m) => ({ ...m, joinedOn: firstSeen.get(m.id) ?? fallback }));
 }

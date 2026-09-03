@@ -38,13 +38,17 @@ export async function GET(_request: Request, context: { params: Promise<{ date: 
 
   const store = getStore();
   try {
-    const [snapshot, closedMonths] = await Promise.all([
+    const month = monthOf(date);
+    const [snapshot, closedMonths, monthTabExists] = await Promise.all([
       store.getDay(date),
       store.listClosedMonths(),
+      store.hasMonthTab(month),
     ]);
     return NextResponse.json({
       snapshot,
-      closed: closedMonths.includes(monthOf(date)),
+      closed: closedMonths.includes(month),
+      monthTabExists,
+      month,
     });
   } catch (error) {
     return NextResponse.json({ error: messageOf(error) }, { status: 500 });
