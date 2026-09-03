@@ -1,0 +1,413 @@
+.page {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 28px 16px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.top {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.032em;
+  margin: 0;
+}
+
+.chip {
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--fill);
+  color: var(--t2);
+}
+
+.chipEditing {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--t3);
+}
+
+.inputShell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--fill);
+  border-radius: var(--r-m);
+  padding: 14px 16px;
+}
+
+.dateInput {
+  flex: 1;
+  min-width: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--t1);
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.dateInput:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.dow {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--t3);
+}
+
+.search {
+  width: 100%;
+  font-size: 1rem;
+  color: var(--t1);
+  background: var(--fill);
+  border: none;
+  border-radius: var(--r-m);
+  padding: 14px 16px;
+}
+
+.search::placeholder {
+  color: var(--t3);
+}
+
+.search:focus-visible {
+  outline: 2px solid var(--blue);
+}
+
+.toggles {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.toggle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--t2);
+  background: var(--fill);
+  border: none;
+  border-radius: 999px;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: background 130ms ease, color 130ms ease;
+}
+
+.toggle:hover:not(:disabled) {
+  background: var(--fill-strong);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.toggleOn {
+  background: var(--blue);
+  color: var(--on-blue);
+}
+
+.toggleOn:hover:not(:disabled) {
+  background: var(--blue-dark);
+}
+
+.toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.meta {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--t3);
+  font-variant-numeric: tabular-nums;
+  margin: 0;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 0;
+}
+
+.row + .row {
+  border-top: 1px solid var(--line);
+}
+
+.rowMain {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--fill);
+  color: var(--t2);
+  font-size: 0.875rem;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+.avatarAttend {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.avatarNoShow {
+  background: var(--red-soft);
+  color: var(--red);
+}
+
+.name {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+
+/* 상태가 둘뿐이라 순환 탭 대신 버튼 두 개를 둡니다. 순환이면 잘못 찍었을 때
+   되돌릴 방법이 없고, 두 버튼은 같은 걸 다시 눌러 해제할 수 있습니다. */
+.stateBtn {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--t2);
+  background: var(--fill);
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  cursor: pointer;
+  transition: background 130ms ease, color 130ms ease;
+}
+
+.stateBtn:hover:not(:disabled) {
+  background: var(--fill-strong);
+}
+
+.stateBtn:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.stateBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.attendOn {
+  background: var(--green);
+  color: #fff;
+}
+
+.attendOn:hover:not(:disabled) {
+  background: var(--green);
+}
+
+.noShowOn {
+  background: var(--red);
+  color: #fff;
+}
+
+.noShowOn:hover:not(:disabled) {
+  background: var(--red);
+}
+
+.subToggle {
+  align-self: flex-start;
+  margin-left: 46px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: var(--t3);
+  background: var(--fill);
+  border: none;
+  border-radius: 999px;
+  padding: 6px 13px;
+  cursor: pointer;
+}
+
+.subToggle:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.subToggleOn {
+  background: var(--blue-soft);
+  color: var(--blue);
+}
+
+.blank {
+  padding: 28px 18px;
+  text-align: center;
+  background: var(--fill);
+  border-radius: var(--r-m);
+  color: var(--t3);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.addNew {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--blue);
+  background: var(--blue-soft);
+  border: none;
+  border-radius: var(--r-m);
+  padding: 14px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.addNew:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
+.counts {
+  display: flex;
+  gap: 8px;
+}
+
+.count {
+  flex: 1;
+  background: var(--fill);
+  border-radius: var(--r-m);
+  padding: 12px 10px;
+  text-align: center;
+}
+
+.count b {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+.count span {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--t3);
+}
+
+.countAttend b {
+  color: var(--green);
+}
+
+.countNoShow b {
+  color: var(--red);
+}
+
+.cta {
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--on-blue);
+  background: var(--blue);
+  border: none;
+  border-radius: var(--r-m);
+  padding: 16px;
+  cursor: pointer;
+  transition: background 130ms ease;
+}
+
+.cta:hover:not(:disabled) {
+  background: var(--blue-dark);
+}
+
+.cta:focus-visible {
+  outline: 2px solid var(--t1);
+  outline-offset: 2px;
+}
+
+.cta:disabled {
+  background: var(--fill-strong);
+  color: var(--t3);
+  cursor: not-allowed;
+}
+
+.notice {
+  padding: 14px 16px;
+  border-radius: var(--r-m);
+  background: var(--red-soft);
+  color: var(--t2);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.notice b {
+  color: var(--red);
+  font-weight: 700;
+}
+
+.noticeInfo {
+  background: var(--blue-soft);
+}
+
+.noticeInfo b {
+  color: var(--blue);
+}
+
+.noticeOk {
+  background: var(--green-soft);
+}
+
+.noticeOk b {
+  color: var(--green);
+}
+
+.footLink {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: center;
+}

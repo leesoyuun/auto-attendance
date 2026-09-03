@@ -1,0 +1,48 @@
+import type {
+  AttendanceRecord,
+  DayEntry,
+  EventKind,
+  IsoDate,
+  IsoMonth,
+  Member,
+  SoloRun,
+} from "../types";
+
+/**
+ * 저장소 인터페이스.
+ *
+ * UI와 계산은 이 인터페이스만 알고 있어서, 구글 시트를 붙이든 목 데이터를 쓰든
+ * 화면 코드를 고칠 필요가 없습니다. 개발 중에는 MockStore, 실제로는 GoogleSheetsStore.
+ */
+export interface AttendanceStore {
+  listMembers(): Promise<Member[]>;
+  addMember(name: string, joinedOn: IsoDate): Promise<Member>;
+
+  /** 그 날짜에 저장된 기록. 과거 수정 화면이 이걸로 화면을 복원합니다. */
+  getDay(date: IsoDate): Promise<DaySnapshot | null>;
+  /** 전체 기록. 점수·경고는 이력 전체를 봐야 계산됩니다. */
+  listRecords(): Promise<AttendanceRecord[]>;
+  listSoloRuns(): Promise<SoloRun[]>;
+
+  /**
+   * 그 날짜의 기록을 저장합니다. 같은 날짜·같은 사람의 행이 있으면 새 행을
+   * 쌓지 않고 갱신합니다. 중복 행이 생기면 점수가 두 번 계산됩니다.
+   */
+  saveDay(date: IsoDate, kind: EventKind, entries: DayEntry[]): Promise<void>;
+
+  /** 확정된 달은 읽기 전용입니다. 고치면 끝난 추첨 결과가 뒤집힙니다. */
+  listClosedMonths(): Promise<IsoMonth[]>;
+}
+
+export interface DaySnapshot {
+  date: IsoDate;
+  kind: EventKind;
+  entries: DayEntry[];
+}
+
+export class MonthClosedError extends Error {
+  constructor(public readonly month: IsoMonth) {
+    super(`${month} 은 확정된 달입니다. 확정을 해제한 뒤에 수정할 수 있습니다.`);
+    this.name = "MonthClosedError";
+  }
+}
