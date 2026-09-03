@@ -14,7 +14,6 @@ const target: Member = {
   id: "M001",
   name: "주원",
   joinedOn: "2026-08-31",
-  leftOn: null,
 };
 
 /** 크루에 일정이 있었다는 사실만 만들어 주는 다른 멤버. */
@@ -216,12 +215,15 @@ describe("경고 판정", () => {
     expect(evaluate(records, "2026-09-06").warnings.count).toBe(1);
   });
 
-  it("탈퇴한 뒤의 주는 판정하지 않는다", () => {
-    const left: Member = { ...target, leftOn: "2026-09-06" };
+  it("주 중간에 가입했으면 그 주는 판정하지 않는다", () => {
+    // 남은 며칠로 "주 1회 + 후기"를 요구하는 셈이라 부당합니다.
+    const midWeek: Member = { ...target, joinedOn: "2026-09-03" };
     const records = [attend(FILLER, "2026-09-01"), attend(FILLER, "2026-09-08")];
-    const result = evaluate(records, "2026-09-13", left);
-    const afterLeaving = result.weeks.find((w) => w.weekStart === "2026-09-07");
-    expect(afterLeaving?.skipped).toBe("not-active");
+    const result = evaluate(records, "2026-09-13", midWeek);
+    const joiningWeek = result.weeks.find((w) => w.weekStart === "2026-08-31");
+    expect(joiningWeek?.skipped).toBe("before-join");
+    // 다음 주(월요일 시작)부터는 판정합니다.
+    expect(result.warnings.count).toBe(1);
   });
 
   it("경고 3회에 도달하면 퇴출 대상으로 표시된다", () => {
@@ -280,7 +282,7 @@ describe("월별 집계", () => {
   });
 
   it("점수가 높은 사람부터 정렬된다", () => {
-    const other: Member = { id: "M002", name: "중현", joinedOn: "2026-08-31", leftOn: null };
+    const other: Member = { id: "M002", name: "중현", joinedOn: "2026-08-31" };
     const records = [
       attend(target.id, "2026-09-01"),
       attend(other.id, "2026-09-01"),

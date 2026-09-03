@@ -105,7 +105,7 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
       if (mark?.state === "참여") attend += 1;
       else if (mark?.state === "노쇼") noShow += 1;
     }
-    return { attend, noShow, untouched: pool.length - attend - noShow };
+    return { attend, noShow };
   }, [pool, marks]);
 
   const marked = counts.attend + counts.noShow;
@@ -160,12 +160,17 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
     if (closed || marked === 0) return;
     setBusy(true);
     setMessage(null);
-    const entries: DayEntry[] = Object.entries(marks).map(([memberId, mark]) => ({
-      memberId,
-      state: mark.state,
-      reviewed: mark.state === "참여" ? mark.flag : false,
-      excused: mark.state === "노쇼" ? mark.flag : false,
-    }));
+    // 명단에 있는 사람만 저장합니다. 나간 사람을 명단에서 지우면 과거 기록에
+    // 회원ID만 남는데, 그 고아 행까지 다시 쓰면 화면 숫자와 저장 결과가 어긋납니다.
+    const known = new Set(pool.map((m) => m.id));
+    const entries: DayEntry[] = Object.entries(marks)
+      .filter(([memberId]) => known.has(memberId))
+      .map(([memberId, mark]) => ({
+        memberId,
+        state: mark.state,
+        reviewed: mark.state === "참여" ? mark.flag : false,
+        excused: mark.state === "노쇼" ? mark.flag : false,
+      }));
 
     try {
       const response = await fetch(`/api/day/${date}`, {
@@ -273,14 +278,14 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
           ? `검색 결과 ${visible.length}명`
           : showAll
             ? `활동 회원 ${pool.length}명`
-            : `체크한 사람 ${visible.length}명 · 미체크 ${counts.untouched}명`}
+            : `체크한 사람 ${visible.length}명`}
       </p>
 
       {visible.length === 0 && (
         <p className={styles.blank}>
           {query.trim()
             ? `“${query.trim()}” 에 맞는 이름이 없습니다`
-            : "나온 사람과 노쇼만 검색해서 찍으세요. 나머지는 기록하지 않습니다."}
+            : "이름을 검색해서 찍어주세요."}
         </p>
       )}
 
@@ -296,55 +301,56 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
           const state = mark?.state;
           return (
             <li key={member.id} className={styles.row}>
-              <div className={styles.rowMain}>
-                <span className={styles.who}>
-                  <span
-                    className={`${styles.avatar} ${
-                      state === "참여"
-                        ? styles.avatarAttend
-                        : state === "노쇼"
-                          ? styles.avatarNoShow
-                          : ""
-                    }`}
-                    aria-hidden="true"
-                  >
-                    {member.name.slice(0, 1)}
-                  </span>
-                  <span className={styles.name}>{member.name}</span>
+              <span className={styles.who}>
+                <span
+                  className={`${styles.avatar} ${
+                    state === "참여"
+                      ? styles.avatarAttend
+                      : state === "노쇼"
+                        ? styles.avatarNoShow
+                        : ""
+                  }`}
+                  aria-hidden="true"
+                >
+                  {member.name.slice(0, 1)}
                 </span>
-                <span className={styles.actions}>
-                  <button
-                    type="button"
-                    className={`${styles.stateBtn} ${state === "참여" ? styles.attendOn : ""}`}
-                    aria-pressed={state === "참여"}
-                    disabled={closed}
-                    onClick={() => setState(member.id, "참여")}
-                  >
-                    참여
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.stateBtn} ${state === "노쇼" ? styles.noShowOn : ""}`}
-                    aria-pressed={state === "노쇼"}
-                    disabled={closed}
-                    onClick={() => setState(member.id, "노쇼")}
-                  >
-                    노쇼
-                  </button>
-                </span>
-              </div>
+                <span className={styles.name}>{member.name}</span>
+              </span>
 
-              {state && (
+              <span className={styles.actions}>
+                {/* 후기·면책은 상태가 정해진 뒤에만 의미가 있어서 참여 왼쪽에 붙습니다.
+                    자리를 비워두지 않고 없애는 편이 좁은 화면에서 낫습니다. */}
+                {state && (
+                  <button
+                    type="button"
+                    className={`${styles.subToggle} ${mark?.flag ? styles.subToggleOn : ""}`}
+                    aria-pressed={mark?.flag ?? false}
+                    aria-label={`${member.name} ${state === "참여" ? "후기 제출" : "사전 고지 면책"}`}
+                    disabled={closed}
+                    onClick={() => toggleFlag(member.id)}
+                  >
+                    {state === "참여" ? "후기" : "면책"}
+                  </button>
+                )}
                 <button
                   type="button"
-                  className={`${styles.subToggle} ${mark?.flag ? styles.subToggleOn : ""}`}
-                  aria-pressed={mark?.flag ?? false}
+                  className={`${styles.stateBtn} ${state === "참여" ? styles.attendOn : ""}`}
+                  aria-pressed={state === "참여"}
                   disabled={closed}
-                  onClick={() => toggleFlag(member.id)}
+                  onClick={() => setState(member.id, "참여")}
                 >
-                  {state === "참여" ? "후기 제출" : "면책"}
+                  참여
                 </button>
-              )}
+                <button
+                  type="button"
+                  className={`${styles.stateBtn} ${state === "노쇼" ? styles.noShowOn : ""}`}
+                  aria-pressed={state === "노쇼"}
+                  disabled={closed}
+                  onClick={() => setState(member.id, "노쇼")}
+                >
+                  노쇼
+                </button>
+              </span>
             </li>
           );
         })}
@@ -358,10 +364,6 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
         <div className={`${styles.count} ${styles.countNoShow}`}>
           <b>{counts.noShow}</b>
           <span>노쇼</span>
-        </div>
-        <div className={styles.count}>
-          <b>{counts.untouched}</b>
-          <span>미체크</span>
         </div>
       </div>
 

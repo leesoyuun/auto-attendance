@@ -2,20 +2,20 @@ import { matchesName } from "./hangul";
 import type { IsoDate, Member } from "./types";
 
 /**
- * 활동 기간은 가입일부터 탈퇴일까지(양쪽 포함)입니다.
+ * 그 날짜에 이미 가입해 있었는지.
  *
- * 탈퇴일 당일을 빼면 마지막 날 러닝에 나왔어도 기록을 넣을 수 없게 됩니다.
+ * 나간 사람은 명단에서 지우므로 탈퇴 여부는 볼 것이 없습니다. 가입일만 봅니다 —
+ * 가입 전 주에 미참여 경고를 소급하면 부당하기 때문입니다.
  */
 export function isActiveOn(member: Member, date: IsoDate): boolean {
-  if (member.joinedOn > date) return false;
-  return member.leftOn === null || member.leftOn >= date;
+  return member.joinedOn <= date;
 }
 
 /**
- * 그 날짜에 활동 중이던 사람만 반환합니다.
+ * 그 날짜 기준으로 명단에 있던 사람만 반환합니다.
  *
- * 현재 활동 회원이 아니라 "선택한 날짜 기준"이라는 점이 중요합니다. 지난달
- * 기록을 고치는데 그때 있던 멤버가 검색되지 않으면 수정 자체가 불가능합니다.
+ * "현재 회원"이 아니라 "선택한 날짜 기준"이라는 점이 중요합니다. 지난달 기록을
+ * 고칠 때 그때 있던 멤버가 검색되지 않으면 수정 자체가 불가능합니다.
  */
 export function activeMembersOn(members: Member[], date: IsoDate): Member[] {
   return members.filter((m) => isActiveOn(m, date));

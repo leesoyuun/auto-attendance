@@ -30,7 +30,7 @@ const SHEETS = {
 } as const;
 
 const HEADERS = {
-  members: ["회원ID", "이름", "가입일", "탈퇴일"],
+  members: ["회원ID", "이름", "가입일"],
   attendance: ["회원ID", "날짜", "구분", "상태", "후기", "면책", "기록시각", "수정시각"],
   soloRuns: ["회원ID", "날짜", "시간"],
   closed: ["월"],
@@ -132,18 +132,17 @@ export class GoogleSheetsStore implements AttendanceStore {
       id: row[0].trim(),
       name: row[1]?.trim() ?? "",
       joinedOn: row[2]?.trim() ?? "",
-      leftOn: row[3]?.trim() ? row[3].trim() : null,
     }));
   }
 
   async addMember(name: string, joinedOn: IsoDate): Promise<Member> {
     const members = await this.listMembers();
-    const member: Member = { id: nextMemberId(members), name, joinedOn, leftOn: null };
+    const member: Member = { id: nextMemberId(members), name, joinedOn };
     await this.request(
       `/values/${encodeURIComponent(SHEETS.members)}:append?valueInputOption=RAW`,
       {
         method: "POST",
-        body: JSON.stringify({ values: [[member.id, member.name, member.joinedOn, ""]] }),
+        body: JSON.stringify({ values: [[member.id, member.name, member.joinedOn]] }),
       },
     );
     return member;

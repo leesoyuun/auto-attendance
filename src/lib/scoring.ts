@@ -1,5 +1,4 @@
-import { addMonths, monthOf, shiftDays, weekStartOf, weeksBetween } from "./date";
-import { isActiveOn } from "./roster";
+import { addMonths, monthOf, weekStartOf, weeksBetween } from "./date";
 import type {
   AttendanceRecord,
   IsoDate,
@@ -60,7 +59,7 @@ export interface WeekOutcome {
   excusedNoShows: number;
   warned: boolean;
   /** 판정을 건너뛴 이유 */
-  skipped: "no-events" | "not-active" | null;
+  skipped: "no-events" | "before-join" | null;
   note: string;
 }
 
@@ -87,9 +86,6 @@ export interface MemberEvaluation {
   expulsionCandidate: boolean;
   reasons: string[];
 }
-
-/** 월요일 시작 기준, 한 주의 요일 오프셋. */
-const WEEK_OFFSETS = [0, 1, 2, 3, 4, 5, 6] as const;
 
 function byDate<T extends { date: IsoDate }>(items: T[]): T[] {
   return [...items].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
@@ -248,13 +244,11 @@ function evaluateWeeks(
       excusedNoShows: excusedNoShows.length,
     };
 
-    // 가입 전이거나 이미 나간 주는 판정 대상이 아닙니다. 주 안에 활동 중인 날이
-    // 하루라도 있으면 판정합니다 — 가입 주와 탈퇴 주를 통째로 빼면 안 되니까요.
-    const activeSomeDay = WEEK_OFFSETS.some((offset) =>
-      isActiveOn(member, shiftDays(weekStart, offset)),
-    );
-    if (!activeSomeDay) {
-      return { ...base, warned: false, skipped: "not-active", note: "활동 기간 아님" };
+    // 주가 시작되기 전에 가입한 사람만 그 주로 판정합니다. 주 중간에 가입했으면
+    // 남은 며칠로 "주 1회 + 후기"를 요구하는 셈이라 부당합니다. 퇴출로 이어지는
+    // 판정이므로 느슨한 쪽을 택합니다.
+    if (weekStart < member.joinedOn) {
+      return { ...base, warned: false, skipped: "before-join", note: "가입 전" };
     }
 
     if (!base.hadEvents) {

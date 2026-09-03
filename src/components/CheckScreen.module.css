@@ -157,8 +157,9 @@
 
 .row {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   padding: 10px 0;
 }
 
@@ -166,18 +167,13 @@
   border-top: 1px solid var(--line);
 }
 
-.rowMain {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
+/* 이름이 길면 이름만 줄어들고 버튼은 밀리지 않게 합니다. */
 .who {
   display: flex;
   align-items: center;
   gap: 10px;
   min-width: 0;
+  flex: 1;
 }
 
 .avatar {
@@ -207,10 +203,15 @@
   font-size: 1rem;
   font-weight: 600;
   letter-spacing: -0.02em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .actions {
   display: flex;
+  align-items: center;
   gap: 6px;
   flex: none;
 }
@@ -261,17 +262,22 @@
   background: var(--red);
 }
 
+/* 참여 버튼 왼쪽에 붙는 후기·면책 토글. 상태 버튼보다 한 단계 약하게 보이도록
+   테두리만 두고 배경을 비웁니다. */
 .subToggle {
-  align-self: flex-start;
-  margin-left: 46px;
   font-size: 0.8125rem;
   font-weight: 700;
   color: var(--t3);
-  background: var(--fill);
-  border: none;
+  background: transparent;
+  border: 1px solid var(--line);
   border-radius: 999px;
-  padding: 6px 13px;
+  padding: 7px 12px;
   cursor: pointer;
+  flex: none;
+}
+
+.subToggle:hover:not(:disabled) {
+  background: var(--fill);
 }
 
 .subToggle:focus-visible {
@@ -279,18 +285,20 @@
   outline-offset: 2px;
 }
 
+.subToggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .subToggleOn {
   background: var(--blue-soft);
+  border-color: var(--blue-soft);
   color: var(--blue);
 }
 
 .blank {
-  padding: 28px 18px;
-  text-align: center;
-  background: var(--fill);
-  border-radius: var(--r-m);
   color: var(--t3);
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   margin: 0;
 }
 

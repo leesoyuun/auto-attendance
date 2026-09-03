@@ -21,9 +21,14 @@ export interface Member {
   id: string;
   /** 표시용. 언제든 바뀔 수 있습니다. */
   name: string;
+  /**
+   * 가입일. 이 날짜 이전 주는 경고 판정에서 빠집니다.
+   *
+   * 탈퇴일은 두지 않습니다. 나간 사람은 명단에서 행을 지우는 방식이라
+   * 명단에 있으면 활동 중, 없으면 끝입니다. 지운 뒤에도 과거 출석 로그에는
+   * 회원ID가 남으므로(고아 기록), 집계는 명단에 없는 ID를 건너뜁니다.
+   */
   joinedOn: IsoDate;
-  /** 탈퇴일. 이 날짜까지는 활동으로 봅니다(마지막 날 러닝을 기록할 수 있어야 하므로). */
-  leftOn: IsoDate | null;
 }
 
 export interface AttendanceRecord {

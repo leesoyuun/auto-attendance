@@ -24,33 +24,31 @@ export class MockStore implements AttendanceStore {
   private closedMonths: IsoMonth[];
 
   constructor(today: IsoDate = kstToday()) {
-    const leftOn = shiftDays(today, -3);
     this.members = [
-      { id: "M001", name: "주원", joinedOn: "2026-01-05", leftOn: null },
-      { id: "M002", name: "중현", joinedOn: "2026-01-05", leftOn: null },
-      { id: "M003", name: "푸름", joinedOn: "2026-01-05", leftOn: null },
-      { id: "M004", name: "세정", joinedOn: "2026-01-12", leftOn: null },
-      { id: "M005", name: "세종", joinedOn: "2026-01-12", leftOn: null },
-      { id: "M006", name: "효신", joinedOn: "2026-02-02", leftOn: null },
-      { id: "M007", name: "유주", joinedOn: "2026-02-02", leftOn: null },
-      { id: "M008", name: "상일", joinedOn: "2026-03-09", leftOn: null },
-      { id: "M009", name: "가형", joinedOn: "2026-03-09", leftOn: null },
-      { id: "M010", name: "소정", joinedOn: "2026-04-06", leftOn: null },
-      { id: "M011", name: "형섭", joinedOn: "2026-04-06", leftOn: null },
-      // 탈퇴 예시 — 오늘은 검색에 안 나오지만 지난 날짜에는 나옵니다.
-      { id: "M012", name: "윤아", joinedOn: "2026-02-01", leftOn },
-      { id: "M013", name: "하늘", joinedOn: "2026-05-04", leftOn: null },
-      { id: "M014", name: "다온", joinedOn: "2026-05-04", leftOn: null },
-      { id: "M015", name: "지호", joinedOn: "2026-05-18", leftOn: null },
-      { id: "M016", name: "은비", joinedOn: "2026-06-01", leftOn: null },
-      { id: "M017", name: "태윤", joinedOn: "2026-06-01", leftOn: null },
-      { id: "M018", name: "소율", joinedOn: "2026-06-15", leftOn: null },
-      { id: "M019", name: "재민", joinedOn: "2026-07-06", leftOn: null },
-      { id: "M020", name: "나린", joinedOn: "2026-07-06", leftOn: null },
-      { id: "M021", name: "시우", joinedOn: "2026-07-20", leftOn: null },
-      { id: "M022", name: "예린", joinedOn: "2026-08-03", leftOn: null },
-      { id: "M023", name: "도현", joinedOn: "2026-08-03", leftOn: null },
-      { id: "M024", name: "하람", joinedOn: "2026-08-17", leftOn: null },
+      { id: "M001", name: "주원", joinedOn: "2026-01-05" },
+      { id: "M002", name: "중현", joinedOn: "2026-01-05" },
+      { id: "M003", name: "푸름", joinedOn: "2026-01-05" },
+      { id: "M004", name: "세정", joinedOn: "2026-01-12" },
+      { id: "M005", name: "세종", joinedOn: "2026-01-12" },
+      { id: "M006", name: "효신", joinedOn: "2026-02-02" },
+      { id: "M007", name: "유주", joinedOn: "2026-02-02" },
+      { id: "M008", name: "상일", joinedOn: "2026-03-09" },
+      { id: "M009", name: "가형", joinedOn: "2026-03-09" },
+      { id: "M010", name: "소정", joinedOn: "2026-04-06" },
+      { id: "M011", name: "형섭", joinedOn: "2026-04-06" },
+      { id: "M012", name: "윤아", joinedOn: "2026-02-01" },
+      { id: "M013", name: "하늘", joinedOn: "2026-05-04" },
+      { id: "M014", name: "다온", joinedOn: "2026-05-04" },
+      { id: "M015", name: "지호", joinedOn: "2026-05-18" },
+      { id: "M016", name: "은비", joinedOn: "2026-06-01" },
+      { id: "M017", name: "태윤", joinedOn: "2026-06-01" },
+      { id: "M018", name: "소율", joinedOn: "2026-06-15" },
+      { id: "M019", name: "재민", joinedOn: "2026-07-06" },
+      { id: "M020", name: "나린", joinedOn: "2026-07-06" },
+      { id: "M021", name: "시우", joinedOn: "2026-07-20" },
+      { id: "M022", name: "예린", joinedOn: "2026-08-03" },
+      { id: "M023", name: "도현", joinedOn: "2026-08-03" },
+      { id: "M024", name: "하람", joinedOn: "2026-08-17" },
     ];
 
     const stamp = kstStamp();
@@ -111,7 +109,6 @@ export class MockStore implements AttendanceStore {
       id: nextMemberId(this.members),
       name,
       joinedOn,
-      leftOn: null,
     };
     this.members.push(member);
     return member;
