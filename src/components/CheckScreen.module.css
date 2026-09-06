@@ -115,24 +115,6 @@
   color: var(--t3);
 }
 
-.search {
-  width: 100%;
-  font-size: 1rem;
-  color: var(--t1);
-  background: var(--fill);
-  border: none;
-  border-radius: var(--r-m);
-  padding: 14px 16px;
-}
-
-.search::placeholder {
-  color: var(--t3);
-}
-
-.search:focus-visible {
-  outline: 2px solid var(--blue);
-}
-
 .toggles {
   display: flex;
   gap: 8px;
@@ -172,6 +154,43 @@
 .toggle:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.pasteBox {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pasteArea {
+  width: 100%;
+  min-height: 96px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--t1);
+  background: var(--fill);
+  border: none;
+  border-radius: var(--r-m);
+  padding: 14px 16px;
+  resize: vertical;
+}
+
+.pasteArea::placeholder {
+  color: var(--t3);
+}
+
+.pasteArea:focus-visible {
+  outline: 2px solid var(--blue);
+}
+
+.pasteActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.pasteActions .cta {
+  padding: 10px 20px;
+  font-size: 0.9375rem;
 }
 
 .meta {
@@ -303,23 +322,6 @@
   margin: 0;
 }
 
-.addNew {
-  font-size: 0.9375rem;
-  font-weight: 700;
-  color: var(--blue);
-  background: var(--blue-soft);
-  border: none;
-  border-radius: var(--r-m);
-  padding: 14px;
-  cursor: pointer;
-  text-align: left;
-}
-
-.addNew:focus-visible {
-  outline: 2px solid var(--blue);
-  outline-offset: 2px;
-}
-
 .counts {
   display: flex;
   gap: 8px;
@@ -413,10 +415,4 @@
 
 .noticeOk b {
   color: var(--green);
-}
-
-.footLink {
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-align: center;
 }

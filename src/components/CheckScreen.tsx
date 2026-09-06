@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { dayOfWeek, monthOf } from "@/lib/date";
-import { matchesName } from "@/lib/hangul";
+import { parsePasteText } from "@/lib/paste-parse";
 import { activeMembersOn } from "@/lib/roster";
 import type { AttendanceState, DayEntry, EventKind, IsoDate, Member } from "@/lib/types";
 import styles from "./CheckScreen.module.css";
@@ -28,10 +27,9 @@ interface DayResponse {
 export default function CheckScreen({ today, initialMembers, closedMonths }: Props) {
   const [members, setMembers] = useState<Member[]>(initialMembers);
   const [date, setDate] = useState<IsoDate>(today);
-  const [kind, setKind] = useState<EventKind>("일반");
   const [marks, setMarks] = useState<Marks>({});
-  const [query, setQuery] = useState("");
-  const [showAll, setShowAll] = useState(false);
+  const [kind, setKind] = useState<EventKind>("일반");
+  const [pasteText, setPasteText] = useState("");
   const [loadedFrom, setLoadedFrom] = useState<IsoDate | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: "ok" | "warn" | "info"; text: string } | null>(
@@ -89,13 +87,8 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
 
   const pool = useMemo(() => activeMembersOn(members, date), [members, date]);
 
-  const visible = useMemo(() => {
-    const q = query.trim();
-    if (q) return pool.filter((m) => matchesName(m.name, q));
-    if (showAll) return pool;
-    // 검색창이 비어 있으면 이번에 찍은 사람만 — 저장 전 검토용 화면입니다.
-    return pool.filter((m) => marks[m.id]);
-  }, [pool, query, showAll, marks]);
+  // 저장 전 검토용 — 이번에 찍힌 사람만 보여줍니다.
+  const checkedList = useMemo(() => pool.filter((m) => marks[m.id]), [pool, marks]);
 
   const counts = useMemo(() => {
     let attend = 0;
@@ -182,28 +175,87 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
     }
   }
 
-  async function addMember() {
-    const name = query.trim();
-    if (!name || closed) return;
-    setBusy(true);
-    try {
-      const response = await fetch("/api/members", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, joinedOn: date }),
+  /**
+   * 채팅에 올라온 "출석/불참/혼뛰" 텍스트를 그대로 붙여넣어 한 번에 반영합니다.
+   *
+   * 출석·불참은 저장 전 상태(marks)만 채웁니다 — 검토 후 "저장"을 눌러야
+   * 시트에 남습니다. 혼뛰는 이 화면에 별도 검토 단계가 없으므로 바로
+   * /api/solo 로 보냅니다.
+   */
+  async function applyPaste() {
+    const text = pasteText.trim();
+    if (closed || !text) return;
+
+    const parsed = parsePasteText(pasteText, pool);
+
+    if (parsed.attendIds.length > 0 || parsed.noShowIds.length > 0) {
+      setMarks((prev) => {
+        const next = { ...prev };
+        for (const id of parsed.attendIds) next[id] = "참여";
+        for (const id of parsed.noShowIds) next[id] = "노쇼";
+        return next;
       });
-      const data = (await response.json()) as { member?: Member; error?: string };
-      if (!response.ok || !data.member) {
-        setMessage({ tone: "warn", text: data.error ?? "추가하지 못했습니다." });
-        return;
-      }
-      setMembers((prev) => [...prev, data.member!]);
-      setMarks((prev) => ({ ...prev, [data.member!.id]: "참여" }));
-      setQuery("");
-      setMessage({ tone: "ok", text: `${data.member.name} 을 명단에 추가했습니다.` });
-    } finally {
-      setBusy(false);
     }
+
+    let soloCounted = 0;
+    let soloShort = 0;
+    let soloFailed = 0;
+    if (parsed.solo.length > 0) {
+      setBusy(true);
+      try {
+        for (const entry of parsed.solo) {
+          try {
+            const response = await fetch("/api/solo", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ memberId: entry.memberId, date, minutes: entry.minutes }),
+            });
+            const data = (await response.json()) as { counted?: boolean; error?: string };
+            if (!response.ok) {
+              soloFailed += 1;
+              continue;
+            }
+            if (data.counted) soloCounted += 1;
+            else soloShort += 1;
+          } catch {
+            soloFailed += 1;
+          }
+        }
+      } finally {
+        setBusy(false);
+      }
+    }
+
+    const parts: string[] = [];
+    if (parsed.attendIds.length > 0 || parsed.noShowIds.length > 0) {
+      parts.push(
+        `참여 ${parsed.attendIds.length}명 · 노쇼 ${parsed.noShowIds.length}명 반영 — 저장을 눌러야 남습니다.`,
+      );
+    }
+    if (parsed.solo.length > 0) {
+      const bits = [`혼뛰 ${parsed.solo.length}건 중 ${soloCounted}건 인정`];
+      if (soloShort > 0) bits.push(`${soloShort}건 시간 미달`);
+      if (soloFailed > 0) bits.push(`${soloFailed}건 저장 실패`);
+      parts.push(bits.join(" · "));
+    }
+
+    const problems: string[] = [];
+    if (parsed.unmatched.length > 0) {
+      problems.push(`명단에 없음: ${parsed.unmatched.map((u) => u.token).join(", ")}`);
+    }
+    if (parsed.ambiguous.length > 0) {
+      problems.push(
+        `이름이 여러 명과 겹침: ${parsed.ambiguous
+          .map((a) => `${a.token}(${a.candidates.join("/")})`)
+          .join(", ")}`,
+      );
+    }
+
+    setMessage({
+      tone: problems.length > 0 ? "warn" : "ok",
+      text: [...parts, ...problems].join(" / ") || "반영할 내용이 없습니다.",
+    });
+    setPasteText("");
   }
 
   async function createMonthTab() {
@@ -262,8 +314,6 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
     }
   }
 
-  const unknownName = query.trim().length > 0 && visible.length === 0 && !closed;
-
   return (
     <main className={styles.page}>
       <header className={styles.top}>
@@ -310,28 +360,31 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
         >
           정기러닝
         </button>
-        <button
-          type="button"
-          className={`${styles.toggle} ${showAll ? styles.toggleOn : ""}`}
-          aria-pressed={showAll}
-          onClick={() => {
-            setShowAll(!showAll);
-            setQuery("");
-          }}
-        >
-          전체 명단
-        </button>
       </div>
 
-      <input
-        className={styles.search}
-        type="search"
-        value={query}
-        autoComplete="off"
-        placeholder="이름 검색 · 초성도 됩니다"
-        aria-label="이름 검색"
-        onChange={(event) => setQuery(event.target.value)}
-      />
+      {!closed && (
+        <div className={styles.pasteBox}>
+          <span className={styles.label}>출석 텍스트 붙여넣기</span>
+          <textarea
+            className={styles.pasteArea}
+            value={pasteText}
+            aria-label="출석 텍스트 붙여넣기"
+            placeholder={"출석: 이름1, 이름2,\n불참: 이름1, 이름2,\n혼뛰: 이름1 45분, 이름2(50)"}
+            rows={5}
+            onChange={(event) => setPasteText(event.target.value)}
+          />
+          <div className={styles.pasteActions}>
+            <button
+              type="button"
+              className={styles.cta}
+              disabled={busy || !pasteText.trim()}
+              onClick={applyPaste}
+            >
+              {busy ? "처리 중…" : "적용"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {closed && (
         <p className={styles.notice}>
@@ -366,30 +419,14 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
         </p>
       )}
 
-      <p className={styles.meta}>
-        {query.trim()
-          ? `검색 결과 ${visible.length}명`
-          : showAll
-            ? `활동 회원 ${pool.length}명`
-            : `체크한 사람 ${visible.length}명`}
-      </p>
+      <p className={styles.meta}>체크한 사람 {checkedList.length}명</p>
 
-      {visible.length === 0 && (
-        <p className={styles.blank}>
-          {query.trim()
-            ? `“${query.trim()}” 에 맞는 이름이 없습니다`
-            : "이름을 검색해서 찍어주세요."}
-        </p>
-      )}
-
-      {unknownName && (
-        <button type="button" className={styles.addNew} disabled={busy} onClick={addMember}>
-          ＋ “{query.trim()}” 새 멤버로 추가
-        </button>
+      {checkedList.length === 0 && (
+        <p className={styles.blank}>텍스트를 붙여넣어 출석을 반영해주세요.</p>
       )}
 
       <ul className={styles.list}>
-        {visible.map((member) => {
+        {checkedList.map((member) => {
           const state = marks[member.id];
           return (
             <li key={member.id} className={styles.row}>
@@ -461,10 +498,6 @@ export default function CheckScreen({ today, initialMembers, closedMonths }: Pro
               ? "저장"
               : `${editing ? "수정 저장" : "저장"} · ${marked}명`}
       </button>
-
-      <p className={styles.footLink}>
-        <Link href="/solo">혼뛰 후기</Link> · <Link href="/summary">월별 집계</Link>
-      </p>
     </main>
   );
 }

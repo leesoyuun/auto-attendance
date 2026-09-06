@@ -40,9 +40,17 @@ const HEADER_ROW = 2;
 const FIRST_MEMBER_ROW = 3;
 const LAST_MEMBER_ROW = 98;
 
-/** 참여 시 셀에 쓰는 값. 시트가 이 값을 합산합니다. */
+/** 일반 참여 시 셀에 쓰는 값. 시트가 이 값을 합산합니다. */
 const ATTEND_VALUE = RULES.attendancePoints;
-/** 노쇼 시 셀에 쓰는 값. 기존 시트도 음수를 셀에 직접 적는 관행이 있습니다. */
+/**
+ * 정기러닝 참여 시 셀에 쓰는 값.
+ *
+ * RULES.regularOnce(30)이 아니라 20입니다 — 2026-07 탭 실제 기록을 보면
+ * 정기러닝 날(7/12, 7/26) 대부분의 참여자가 20점을 받았습니다. RULES 쪽
+ * 월별 합산 규칙(30/40)은 이 값과는 별개로 남겨둡니다.
+ */
+const REGULAR_ATTEND_VALUE = 20;
+/** 노쇼 시 셀에 쓰는 값. 기존 시트도 음수를 셀에 직접 적는 관행이 있습니다. 정기·일반 동일합니다. */
 const NO_SHOW_VALUE = RULES.noShowPenalty;
 
 interface TabIndex {
@@ -251,8 +259,10 @@ export class CrewSheetStore implements AttendanceStore {
   /**
    * 그 날짜 열에 값을 씁니다.
    *
-   * 셀에는 참여 10 / 노쇼 −10 만 들어갑니다. 정기러닝 구분은 셀에 담을 수 없어
-   * `정기러닝일` 탭에 날짜만 남기고, 30/40점 가산은 집계에서 계산합니다.
+   * 참여는 일반 10 / 정기러닝 20, 노쇼는 −10 (정기·일반 동일). 정기러닝
+   * 여부는 그 날 하루 단위(kind)로만 구분하고, 한 달에 정기러닝을 여러 번
+   * 나가도 각 날짜 셀에 매번 20이 그대로 찍힙니다 — 월 합계 상한은 없습니다.
+   * 정기러닝 지정 자체는 셀에 담을 수 없어 `정기러닝일` 탭에 날짜만 남깁니다.
    */
   async saveDay(date: IsoDate, kind: EventKind, entries: DayEntry[]): Promise<void> {
     const found = await this.tabForDate(date);
@@ -291,7 +301,11 @@ export class CrewSheetStore implements AttendanceStore {
         continue;
       }
       values[row - FIRST_MEMBER_ROW] = [
-        state === "참여" ? ATTEND_VALUE : NO_SHOW_VALUE,
+        state === "참여"
+          ? kind === "정기"
+            ? REGULAR_ATTEND_VALUE
+            : ATTEND_VALUE
+          : NO_SHOW_VALUE,
       ];
     }
     if (unknown.length > 0) {
